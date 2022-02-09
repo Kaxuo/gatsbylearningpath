@@ -1,28 +1,11 @@
-import { graphql, useStaticQuery } from "gatsby"
+import { graphql } from "gatsby"
 import React from "react"
 import { Link } from "gatsby"
 
-const Blog = () => {
+const Blog = ({ data }) => {
   const {
     allMarkdownRemark: { edges },
-  } = useStaticQuery(graphql`
-    query BlogIndexQuery {
-      allMarkdownRemark {
-        edges {
-          node {
-            id
-            frontmatter {
-              path
-              title
-              date
-              author
-            }
-            excerpt
-          }
-        }
-      }
-    }
-  `)
+  } = data
   return (
     <div style={{ padding: "1rem 10rem" }}>
       <h1 style={{ textAlign: "center" }}>Latest Post</h1>
@@ -46,5 +29,22 @@ const Blog = () => {
     </div>
   )
 }
-
+export const query = graphql`
+  query BlogIndexQuery {
+    allMarkdownRemark {
+      edges {
+        node {
+          id
+          frontmatter {
+            path
+            title
+            date
+            author
+          }
+          excerpt
+        }
+      }
+    }
+  }
+`
 export default Blog

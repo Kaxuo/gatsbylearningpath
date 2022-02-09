@@ -1,44 +1,47 @@
-exports.createPages = ({ graphql, actions }) => {
+const path = require("path")
+// Implement the Gatsby API “createPages”. This is called once the
+// data layer is bootstrapped to let plugins create pages from data.
+exports.createPages = async ({ graphql, actions, reporter }) => {
   const { createPage } = actions
-  return new Promise((resolve, reject) => {
-    // to create the page we need access to the blog post template
-    const postTemplate = path.resolve("src/templates/blog-post.js")
-    resolve(
-      graphql(
-        `
-          {
-            allMarkdownRemark {
-              edges {
-                node {
-                  frontmatter {
-                    path
-                  }
-                }
+  // Query for markdown nodes to use in creating pages.
+  const result = await graphql(
+    `
+      {
+        allMarkdownRemark(limit: 1000) {
+          edges {
+            node {
+              frontmatter {
+                path
+                title
+                date
+                author
               }
+              html
             }
           }
-        `
-      ).then(result => {
-        if (result.errors) {
-          console.log(result.errors)
-          reject(result.errors)
         }
-        result.data.allMarkdownRemark.edges.forEach(({ node }) => {
-          // you can see node value in the screenshot
-          const path = node.frontmatter.path
-
-          createPage({
-            path,
-            component: postTemplate,
-            context: {
-              /*
-              the value passed in the context will be available for you to use in your page queries as a GraphQL variable, as per the template snippet */
-              pathSlug: path,
-            },
-          })
-          resolve()
-        })
-      })
-    )
+      }
+    `
+  )
+  // Handle errors
+  if (result.errors) {
+    reporter.panicOnBuild(`Error while running GraphQL query.`)
+    return
+  }
+  // Create pages for each markdown file.
+  const blogPostTemplate = path.resolve(`src/templates/blog-post.js`)
+  result.data.allMarkdownRemark.edges.forEach(({ node }) => {
+    const path = node.frontmatter.path
+    const data = node
+    createPage({
+      path,
+      component: blogPostTemplate,
+      // In your blog post template's graphql query, you can use pagePath
+      // as a GraphQL variable to query for data from the markdown file.
+      context: {
+        content: data,
+        pagePath: path,
+      },
+    })
   })
 }
